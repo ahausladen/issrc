@@ -160,7 +160,7 @@ const
   );
 
   { Main }
-  MainTable: array [0..20] of AnsiString =
+  MainTable: array [0..21] of AnsiString =
   (
     'function WizardForm: TWizardForm;',
     'function MainForm: TMainForm;',
@@ -168,6 +168,7 @@ const
     'function ProcessEvents: Boolean;',
     'function IsComponentSelected(const Components: String): Boolean;',
     'function IsTaskSelected(const Tasks: String): Boolean;',
+    'procedure UpdateComponentList;',
     'function ExpandConstant(const S: String): String;',
     'function ExpandConstantEx(const S: String; const CustomConst, CustomValue: String): String;',
     'function ExitSetupMsgBox: Boolean;',

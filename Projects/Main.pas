@@ -89,6 +89,8 @@ const
                                  { Stopped on Preparing to Install page;
                                    restart needed. }
 
+  OriginalEntrySet = [seComponent];
+
 var
   MainForm: TMainForm;
 
@@ -129,6 +131,7 @@ var
   SetupHeader: TSetupHeader;
   LangOptions: TSetupLanguageEntry;
   Entries: array[TEntryType] of TList;
+  OriginalEntries: array[seComponent..seComponent] of TList; // range: see OriginalEntrySet
   WizardImage: TBitmap;
   WizardSmallImage: TBitmap;
   CloseApplicationsFilterList: TStringList;
@@ -235,6 +238,7 @@ function ShouldProcessRunEntry(const WizardComponents, WizardTasks: TStringList;
   const RunEntry: PSetupRunEntry): Boolean;
 function TestPassword(const Password: String): Boolean;
 procedure ClearCheckExpressionCache;
+procedure ReloadComponents;
 procedure UnloadSHFolderDLL;
 function WindowsVersionAtLeast(const AMajor, AMinor: Byte): Boolean;
 
@@ -1670,6 +1674,66 @@ begin
     (StrComp(FindData.cFileName, '..') <> 0);
 end;
 
+procedure CopyEntryListTo(SourceList, DestList: TList);
+var
+  I: Integer;
+begin
+  DestList.Count := SourceList.Count;
+  for I := 0 to SourceList.Count - 1 do
+    DestList[I] := SourceList[I];
+end;
+
+{ Reset component list and remove components }
+procedure ReloadComponents;
+var
+  I, NextAllowedLevel: Integer;
+  LastShownComponentEntry, ComponentEntry: PSetupComponentEntry;
+begin
+  CopyEntryListTo(OriginalEntries[seComponent], Entries[seComponent]);
+
+  NextAllowedLevel := 0;
+  LastShownComponentEntry := nil;
+  for I := 0 to Entries[seComponent].Count-1 do begin
+    ComponentEntry := PSetupComponentEntry(Entries[seComponent][I]);
+    if (ComponentEntry.Level <= NextAllowedLevel) and
+       (InstallOnThisVersion(ComponentEntry.MinVersion, ComponentEntry.OnlyBelowVersion) = irInstall) and
+       ShouldProcessEntry(nil, nil, '', '', ComponentEntry.Languages, ComponentEntry.Check) then begin
+      NextAllowedLevel := ComponentEntry.Level + 1;
+      LastShownComponentEntry := ComponentEntry;
+    end
+    else begin
+      { Not showing }
+      if Assigned(LastShownComponentEntry) and
+         (ComponentEntry.Level = LastShownComponentEntry.Level) and
+         (CompareText(ComponentEntry.Name, LastShownComponentEntry.Name) = 0) then begin
+        { It's a duplicate of the last shown item. Leave NextAllowedLevel
+          alone, so that any child items that follow can attach to the last
+          shown item. }
+      end
+      else begin
+        { Not a duplicate of the last shown item, so the next item must be
+          at the same level or less }
+        if NextAllowedLevel > ComponentEntry.Level then
+          NextAllowedLevel := ComponentEntry.Level;
+        { Clear LastShownComponentEntry so that no subsequent item can be
+          considered a duplicate of it. Needed in this case:
+            foo         (shown)
+            foo\childA  (not shown)
+            foo         (not shown)
+            foo\childB
+          "foo\childB" should be hidden, not made a child of "foo" #1. }
+        LastShownComponentEntry := nil;
+      end;
+      Entries[seComponent][I] := nil;
+      // SEFreeRec(ComponentEntry, EntryStrings[seComponent], EntryAnsiStrings[seComponent]); we are working on a copy of the reference
+    end;
+  end;
+  { Delete the nil-ed items now }
+  Entries[seComponent].Pack();
+
+  HasComponents := Entries[seComponent].Count <> 0;
+end;
+
 type
   TEnumFilesProc = function(const DisableFsRedir: Boolean; const Filename: String;
     const Param: Pointer): Boolean;
@@ -2538,6 +2602,8 @@ var
         EntryAnsiStrings[EntryType]);
       Entries[EntryType].Add(P);
     end;
+    if EntryType in OriginalEntrySet then
+      CopyEntryListTo(Entries[EntryType], OriginalEntries[EntryType]);
   end;
 
   procedure ReadEntries(const EntryType: TEntryType; const Count: Integer;
@@ -2565,6 +2631,8 @@ var
       else
         SEFreeRec(P, EntryStrings[EntryType], EntryAnsiStrings[EntryType]);
     end;
+    if EntryType in OriginalEntrySet then
+      CopyEntryListTo(Entries[EntryType], OriginalEntries[EntryType]);
   end;
 
   function HandleInitPassword(const NeedPassword: Boolean): Boolean;
@@ -2668,8 +2736,6 @@ var
   SetupFile: TFile;
   TestID: TSetupID;
   NameAndVersionMsg: String;
-  NextAllowedLevel: Integer;
-  LastShownComponentEntry, ComponentEntry: PSetupComponentEntry;
   MinimumTypeSpace: Integer64;
   SourceWildcard: String;
 begin
@@ -3109,44 +3175,7 @@ begin
   Entries[seType].Pack();
 
   { Remove components }
-  NextAllowedLevel := 0;
-  LastShownComponentEntry := nil;
-  for I := 0 to Entries[seComponent].Count-1 do begin
-    ComponentEntry := PSetupComponentEntry(Entries[seComponent][I]);
-    if (ComponentEntry.Level <= NextAllowedLevel) and
-       (InstallOnThisVersion(ComponentEntry.MinVersion, ComponentEntry.OnlyBelowVersion) = irInstall) and
-       ShouldProcessEntry(nil, nil, '', '', ComponentEntry.Languages, ComponentEntry.Check) then begin
-      NextAllowedLevel := ComponentEntry.Level + 1;
-      LastShownComponentEntry := ComponentEntry;
-    end
-    else begin
-      { Not showing }
-      if Assigned(LastShownComponentEntry) and
-         (ComponentEntry.Level = LastShownComponentEntry.Level) and
-         (CompareText(ComponentEntry.Name, LastShownComponentEntry.Name) = 0) then begin
-        { It's a duplicate of the last shown item. Leave NextAllowedLevel
-          alone, so that any child items that follow can attach to the last
-          shown item. }
-      end
-      else begin
-        { Not a duplicate of the last shown item, so the next item must be
-          at the same level or less }
-        if NextAllowedLevel > ComponentEntry.Level then
-          NextAllowedLevel := ComponentEntry.Level;
-        { Clear LastShownComponentEntry so that no subsequent item can be
-          considered a duplicate of it. Needed in this case:
-            foo         (shown)
-            foo\childA  (not shown)
-            foo         (not shown)
-            foo\childB
-          "foo\childB" should be hidden, not made a child of "foo" #1. }
-        LastShownComponentEntry := nil;
-      end;
-      Entries[seComponent][I] := nil;
-      SEFreeRec(ComponentEntry, EntryStrings[seComponent], EntryAnsiStrings[seComponent]);
-    end;
-  end;
-  Entries[seComponent].Pack();
+  ReloadComponents; // updates HasComponents
 
   { Set misc. variables }
   HasCustomType := False;
@@ -3156,8 +3185,6 @@ begin
       Break;
     end;
   end;
-
-  HasComponents := Entries[seComponent].Count <> 0;
 
   HasIcons := Entries[seIcon].Count <> 0;
 
@@ -4226,6 +4253,8 @@ var
 begin
   for I := Low(I) to High(I) do
     Entries[I] := TList.Create;
+  for I := Low(OriginalEntries) to High(OriginalEntries) do
+    OriginalEntries[I] := TList.Create;
 end;
 
 procedure FreeEntryLists;
@@ -4239,6 +4268,11 @@ begin
     List := Entries[I];
     if Assigned(List) then begin
       Entries[I] := nil;
+      if I in OriginalEntrySet then begin
+        List.Free; // Item-Owner is the OriginalEntries[] list
+        List := OriginalEntries[I];
+        OriginalEntries[I] := nil;
+      end;
       for J := List.Count-1 downto 0 do begin
         P := List[J];
         if EntryStrings[I] <> 0 then
@@ -4249,6 +4283,10 @@ begin
       List.Free;
     end;
     FreeAndNil(OriginalEntryIndexes[I]);
+  end;
+  for I := Low(OriginalEntries) to High(OriginalEntries) do begin
+    TObject(OriginalEntries[I]).Free;
+    OriginalEntries[I] := nil;
   end;
 end;
 

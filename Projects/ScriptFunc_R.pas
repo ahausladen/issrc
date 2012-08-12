@@ -971,6 +971,9 @@ begin
     finally
       WizardTasks.Free();
     end;
+  end else if Proc.Name = 'UPDATECOMPONENTLIST' then begin
+    ReloadComponents;
+    WizardForm.UpdateComponentList;
   end else if Proc.Name = 'EXPANDCONSTANT' then begin
     Stack.SetString(PStart, ExpandConst(Stack.GetString(PStart-1)));
   end else if Proc.Name = 'EXPANDCONSTANTEX' then begin
