@@ -3,3 +3,6 @@ compilesettings.bat
 C[Vv][Ss]
 .cvsignore
 Output
+__history
+/lib
+/Components/UniPs
