@@ -943,6 +943,10 @@ begin
     Stack.SetClass(PStart, GetMainForm);
   end else if Proc.Name = 'ACTIVELANGUAGE' then begin
     Stack.SetString(PStart, ExpandConst('{language}'));
+  end else if Proc.Name = 'PROCESSEVENTS' then begin
+    if not NeedToAbortInstall then
+      Application.ProcessMessages;
+    Stack.SetBool(PStart, not NeedToAbortInstall);
   end else if Proc.Name = 'ISCOMPONENTSELECTED' then begin
     if IsUninstaller then
       NoUninstallFuncError(Proc.Name);
