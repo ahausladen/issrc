@@ -237,6 +237,7 @@ function ShouldProcessIconEntry(const WizardComponents, WizardTasks: TStringList
 function ShouldProcessRunEntry(const WizardComponents, WizardTasks: TStringList;
   const RunEntry: PSetupRunEntry): Boolean;
 function TestPassword(const Password: String): Boolean;
+procedure ClearCheckExpressionCache;
 procedure UnloadSHFolderDLL;
 function WindowsVersionAtLeast(const AMajor, AMinor: Byte): Boolean;
 
@@ -263,6 +264,10 @@ var
 
   DecompressorDLLHandle: HMODULE;
   DecryptDLLHandle: HMODULE;
+
+  { Used for "shOptimizedChecks in SetupHeader.Options" }
+  LastCheckExpression: string;
+  LastCheckExpressionResult: Boolean;
 
 type
   TDummyClass = class
@@ -360,6 +365,11 @@ begin
   SHA1Update(Context, Pointer(Password)^, Length(Password)*SizeOf(Password[1]));
   Hash := SHA1Final(Context);
   Result := SHA1DigestsEqual(Hash, SetupHeader.PasswordHash);
+end;
+
+procedure ClearCheckExpressionCache;
+begin
+  LastCheckExpression := ''; // invalidates the cache
 end;
 
 class function TDummyClass.ExpandCheckOrInstallConstant(Sender: TSimpleExpression;
@@ -460,6 +470,14 @@ function EvalCheck(const Expression: String): Boolean;
 var
   SimpleExpression: TSimpleExpression;
 begin
+  { Optimized Checks }
+  if shOptimizedChecks in SetupHeader.Options then begin
+    if Expression = LastCheckExpression then begin
+      Result := LastCheckExpressionResult;
+      Exit;
+    end;
+  end;
+  { Evaluate "Check" }
   try
     SimpleExpression := TSimpleExpression.Create;
     try
@@ -473,6 +491,11 @@ begin
       Result := SimpleExpression.Eval;
     finally
       SimpleExpression.Free;
+    end;
+    { Optimized Checks }
+    if shOptimizedChecks in SetupHeader.Options then begin
+      LastCheckExpression := Expression;
+      LastCheckExpressionResult := Result;
     end;
   except
     InternalError(Format('Expression error ''%s''', [GetExceptMessage]));
@@ -1776,6 +1799,7 @@ var
   SourceWildcard: String;
 begin
   Result := True;
+  ClearCheckExpressionCache;
 
   { [Files] }
   for I := 0 to Entries[seFile].Count-1 do begin
@@ -3157,6 +3181,8 @@ begin
     if LoggedMsgBox(FmtSetupMessage1(msgSetupAppRunningError, ExpandedAppName),
        SetupMessages[msgSetupAppTitle], mbError, MB_OKCANCEL, True, IDCANCEL) <> IDOK then
       Abort;
+
+  ClearCheckExpressionCache; // clear "Check" cache for Types, Components and Tasks
 
   { Remove types that fail their 'languages' or 'check'. Can't do this earlier
     because the InitializeSetup call above can't be done earlier. }

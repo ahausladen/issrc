@@ -84,6 +84,8 @@ var
   N: Integer;
   CurFile: PSetupFileEntry;
 begin
+  ClearCheckExpressionCache;
+
   Result.Hi := 0;
   Result.Lo := 0;
   for N := 0 to Entries[seFile].Count-1 do begin
@@ -103,6 +105,8 @@ procedure InitProgressGauge(const FilesSize: Integer64);
 var
   NewMaxValue: Integer64;
 begin
+  ClearCheckExpressionCache;
+
   { Calculate the MaxValue for the progress meter }
   NewMaxValue.Hi := 0;
   NewMaxValue.Lo := 1000 * Entries[seIcon].Count;
@@ -1602,6 +1606,8 @@ var
     ProgressBefore, ExpectedBytesLeft: Integer64;
     DisableFsRedir, FoundFiles: Boolean;
   begin
+    ClearCheckExpressionCache;
+
     FileLocationFilenames := TStringList.Create;
     try
       for I := 0 to Entries[seFileLocation].Count-1 do
@@ -2768,6 +2774,8 @@ var
   UninstallRegKeyBaseName: String;
   FilesSize: Integer64;
 begin
+  ClearCheckExpressionCache;
+
   Succeeded := False;
   Log('Starting the installation process.');
   SetCurrentDir(WinSystemDir);
