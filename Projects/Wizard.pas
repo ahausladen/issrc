@@ -174,6 +174,7 @@ type
     FPageList: TList;
     FNextPageID: Integer;
     ExpandedDefaultDirName, ExpandedDefaultGroupName: String;
+    NeedSelectComponentPageUpdate: Boolean;
     PrevGroup, PrevSetupType, PrevUserInfoName, PrevUserInfoOrg, PrevUserInfoSerial: String;
     PrevNoIcons: Boolean;
     PrevSelectedComponents, PrevDeselectedComponents: TStringList;
@@ -189,6 +190,8 @@ type
     procedure ChangeReadyLabel(const S: String);
     function CheckSerialOk: Boolean;
     procedure CreateTaskButtons(const SelectedComponents: TStringList);
+    procedure PopulateComponentList(const SelectedComponents, DeselectedComponents: TStringList;
+      IgnoreInitComponents: Boolean; DefaultSetupTypeIndex: Integer);
     procedure FindPreviousData;
     function GetPreviousPageID: Integer;
     function PrepareToInstall(const WizardComponents, WizardTasks: TStringList): String;
@@ -203,6 +206,7 @@ type
     procedure UpdateComponentSizesEnum(Index: Integer; HasChildren: Boolean; Ext: LongInt);
     procedure UpdatePage(const PageID: Integer);
     procedure UpdateSelectTasksPage;
+    procedure UpdateSelectComponentsPage;
     procedure WMSysCommand(var Message: TWMSysCommand); message WM_SYSCOMMAND;
   protected
     procedure CreateParams(var Params: TCreateParams); override;
@@ -234,6 +238,7 @@ type
     procedure UpdateRunList(const SelectedComponents, SelectedTasks: TStringList);
     function ValidateDirEdit: Boolean;
     function ValidateGroupEdit: Boolean;
+    procedure UpdateComponentList;
   end;
 
 var
@@ -671,7 +676,6 @@ var
   I, DefaultSetupTypeIndex: Integer;
   IgnoreInitComponents: Boolean;
   TypeEntry: PSetupTypeEntry;
-  ComponentEntry: PSetupComponentEntry;
   SaveClientWidth, SaveClientHeight: Integer;
 begin
   inherited;
@@ -1028,73 +1032,7 @@ begin
   end;
 
   { Fill components list and assign default components}
-  //first fill list
-  ComponentsList.Clear();
-  ComponentsList.Flat := shFlatComponentsList in SetupHeader.Options;
-  for I := 0 to Entries[seComponent].Count-1 do begin
-    ComponentEntry := PSetupComponentEntry(Entries[seComponent][I]);
-    if coExclusive in ComponentEntry.Options then
-      ComponentsList.AddRadioButton(ExpandConst(ComponentEntry.Description), '', ComponentEntry.Level,
-        False, not (coFixed in ComponentEntry.Options), TObject(ComponentEntry))
-    else
-      ComponentsList.AddCheckBox(ExpandConst(ComponentEntry.Description), '', ComponentEntry.Level,
-        False, not (coFixed in ComponentEntry.Options), ComponentEntry.Used,
-        not (coDontInheritCheck in ComponentEntry.Options), TObject(ComponentEntry));
-    if (ComponentEntry.Size.Hi <> 0) or (ComponentEntry.Size.Lo >= LongWord(1024*1024)) then
-      HasLargeComponents := True;
-  end;
-
-  //now assign default components
-  if not IgnoreInitComponents and InitComponentsSpecified and HasCustomType then begin
-    for I := 0 to Entries[seType].Count-1 do begin
-      TypeEntry := PSetupTypeEntry(Entries[seType][I]);
-      if toIsCustom in TypeEntry.Options then begin
-        TypesCombo.ItemIndex := I;
-        SetSelectedComponentsFromType(TypeEntry.Name, True);
-        SetSelectedComponents(InitComponents, nil);
-        Break;
-      end;
-    end;
-  end else begin
-    if DefaultSetupTypeIndex <> -1 then begin
-      TypeEntry := PSetupTypeEntry(Entries[seType][DefaultSetupTypeIndex]);
-      if toIsCustom in TypeEntry.Options then begin
-        //the previous setup type is a custom type: first select the default components
-        //for the default type (usually the full type). needed for new components.
-        SetSelectedComponentsFromType(PSetupTypeEntry(Entries[seType][0]).Name, False);
-        //then select/deselect the custom type's fixed components
-        SetSelectedComponentsFromType(TypeEntry.Name, True);
-        //now restore the customization
-        SetSelectedComponents(PrevSelectedComponents, PrevDeselectedComponents);
-      end else begin
-        //this is not a custom type, so just select components based on the previous type
-        SetSelectedComponentsFromType(TypeEntry.Name, False);
-      end;
-    end else if Entries[seType].Count > 0 then begin
-      TypeEntry := PSetupTypeEntry(Entries[seType][0]);
-      SetSelectedComponentsFromType(TypeEntry.Name, False);
-    end;
-  end;
-
-  UpdateComponentSizes();
-  CalcCurrentComponentsSpace();
-
-  //Show or hide the components list based on the selected type
-  if HasCustomType then begin
-    TypeEntry := PSetupTypeEntry(Entries[seType][TypesCombo.ItemIndex]);
-    if (toIsCustom in TypeEntry.Options) or (shAlwaysShowComponentsList in SetupHeader.Options) then
-      ComponentsList.Visible := True
-    else
-      ComponentsList.Visible := False;
-  end else
-    ComponentsList.Visible := False;
-  ComponentsDiskSpaceLabel.Visible := ComponentsList.Visible;
-
-  //Store the initial setup type and components (only necessary if customizable)
-  if HasCustomType then begin
-    InitialSetupTypeIndex := TypesCombo.ItemIndex;
-    GetSelectedComponents(InitialSelectedComponents, False, False);
-  end;
+  PopulateComponentList(nil, nil, IgnoreInitComponents, DefaultSetupTypeIndex);
 
   { Assign default group name }
   ExpandedDefaultGroupName := ExpandConst(SetupHeader.DefaultGroupName);
@@ -1424,6 +1362,88 @@ begin
   end;
 end;
 
+procedure TWizardForm.PopulateComponentList(const SelectedComponents, DeselectedComponents: TStringList;
+  IgnoreInitComponents: Boolean; DefaultSetupTypeIndex: Integer);
+var
+  I: Integer;
+  TypeEntry: PSetupTypeEntry;
+  ComponentEntry: PSetupComponentEntry;
+begin
+  //first fill list
+  ComponentsList.Clear();
+  ComponentsList.Flat := shFlatComponentsList in SetupHeader.Options;
+  for I := 0 to Entries[seComponent].Count-1 do begin
+    ComponentEntry := PSetupComponentEntry(Entries[seComponent][I]);
+    if coExclusive in ComponentEntry.Options then
+      ComponentsList.AddRadioButton(ExpandConst(ComponentEntry.Description), '', ComponentEntry.Level,
+        False, not (coFixed in ComponentEntry.Options), TObject(ComponentEntry))
+    else
+      ComponentsList.AddCheckBox(ExpandConst(ComponentEntry.Description), '', ComponentEntry.Level,
+        False, not (coFixed in ComponentEntry.Options), ComponentEntry.Used,
+        not (coDontInheritCheck in ComponentEntry.Options), TObject(ComponentEntry));
+    if (ComponentEntry.Size.Hi <> 0) or (ComponentEntry.Size.Lo >= LongWord(1024*1024)) then
+      HasLargeComponents := True;
+  end;
+
+  //now assign default components
+  if not IgnoreInitComponents and InitComponentsSpecified and HasCustomType then begin
+    for I := 0 to Entries[seType].Count-1 do begin
+      TypeEntry := PSetupTypeEntry(Entries[seType][I]);
+      if toIsCustom in TypeEntry.Options then begin
+        TypesCombo.ItemIndex := I;
+        SetSelectedComponentsFromType(TypeEntry.Name, True);
+        SetSelectedComponents(InitComponents, nil);
+        Break;
+      end;
+    end;
+  end else begin
+    if DefaultSetupTypeIndex <> -1 then begin
+      TypeEntry := PSetupTypeEntry(Entries[seType][DefaultSetupTypeIndex]);
+      if toIsCustom in TypeEntry.Options then begin
+        //the previous setup type is a custom type: first select the default components
+        //for the default type (usually the full type). needed for new components.
+        SetSelectedComponentsFromType(PSetupTypeEntry(Entries[seType][0]).Name, False);
+        //then select/deselect the custom type's fixed components
+        SetSelectedComponentsFromType(TypeEntry.Name, True);
+        //now restore the customization
+        SetSelectedComponents(PrevSelectedComponents, PrevDeselectedComponents);
+
+        if (SelectedComponents <> nil) or (DeselectedComponents <> nil) then begin
+          // The [Code] section caused a component list reload: restore the already
+          // selected/deselected items
+          SetSelectedComponents(SelectedComponents, DeselectedComponents);
+        end;
+      end else begin
+        //this is not a custom type, so just select components based on the previous type
+        SetSelectedComponentsFromType(TypeEntry.Name, False);
+      end;
+    end else if Entries[seType].Count > 0 then begin
+      TypeEntry := PSetupTypeEntry(Entries[seType][0]);
+      SetSelectedComponentsFromType(TypeEntry.Name, False);
+    end;
+  end;
+
+  UpdateComponentSizes();
+  CalcCurrentComponentsSpace();
+
+  //Show or hide the components list based on the selected type
+  if HasCustomType then begin
+    TypeEntry := PSetupTypeEntry(Entries[seType][TypesCombo.ItemIndex]);
+    if (toIsCustom in TypeEntry.Options) or (shAlwaysShowComponentsList in SetupHeader.Options) then
+      ComponentsList.Visible := True
+    else
+      ComponentsList.Visible := False;
+  end else
+    ComponentsList.Visible := False;
+  ComponentsDiskSpaceLabel.Visible := ComponentsList.Visible;
+
+  //Store the initial setup type and components (only necessary if customizable)
+  if HasCustomType then begin
+    InitialSetupTypeIndex := TypesCombo.ItemIndex;
+    GetSelectedComponents(InitialSelectedComponents, False, False);
+  end;
+end;
+
 function TWizardForm.GetSetupType(): PSetupTypeEntry;
 var
   Index: Integer;
@@ -1496,6 +1516,25 @@ begin
   finally
     SelectedComponents.Free();
   end;
+end;
+
+procedure TWizardForm.UpdateSelectComponentsPage;
+var
+  SelectedComponents, DeselectedComponents: TStringList;
+begin
+  SelectedComponents := TStringList.Create();
+  DeselectedComponents := TStringList.Create();
+  try
+    GetComponents(SelectedComponents, DeselectedComponents);
+    PopulateComponentList(SelectedComponents, DeselectedComponents, True, TypesCombo.ItemIndex);
+  finally
+    SelectedComponents.Free();
+  end;
+end;
+
+procedure TWizardForm.UpdateComponentList;
+begin
+  NeedSelectComponentPageUpdate := True;
 end;
 
 procedure TWizardForm.GetSelectedComponents(Components: TStringList; const Descriptions, IndentDescriptions: Boolean);
@@ -1860,6 +1899,12 @@ procedure TWizardForm.UpdatePage(const PageID: Integer);
 begin
   case PageID of
     wpSelectTasks: UpdateSelectTasksPage;
+    wpSelectComponents: begin
+        if NeedSelectComponentPageUpdate then begin
+          UpdateSelectComponentsPage();
+          NeedSelectComponentPageUpdate := False;
+        end;
+      end;
     wpReady: UpdateReadyPage;
   end;
 end;
@@ -2547,7 +2592,7 @@ begin
   else begin
     { Check if there's at least one backslash at least one character past the
       initial '\\' }
-    P := @PChar(Pointer(T))[2];  { the casts avoid a UniqueString call... }  
+    P := @PChar(Pointer(T))[2];  { the casts avoid a UniqueString call... }
     if PathStrScan(P, '\') <= P then begin
       LoggedMsgBox(SetupMessages[msgInvalidPath], '', mbError, MB_OK, True, IDOK);
       Exit;
