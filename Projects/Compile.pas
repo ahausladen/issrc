@@ -135,6 +135,7 @@ type
     ssMessagesFile,
     ssMinVersion,
     ssOnlyBelowVersion,
+    ssOptimizedChecks,
     ssOutputBaseFilename,
     ssOutputDir,
     ssOutputManifestFile,
@@ -3975,6 +3976,9 @@ begin
     ssOnlyBelowVersion: begin
         if not StrToVersionNumbers(Value, SetupHeader.OnlyBelowVersion) then
           Invalid;
+      end;
+    ssOptimizedChecks: begin
+        SetSetupHeaderOption(shOptimizedChecks);
       end;
     ssOutputBaseFilename: begin
         if not FixedOutputBaseFilename then begin

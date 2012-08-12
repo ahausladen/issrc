@@ -176,6 +176,7 @@ type
     ssMessagesFile,
     ssMinVersion,
     ssOnlyBelowVersion,
+    ssOptimizedChecks,
     ssOutputBaseFilename,
     ssOutputDir,
     ssOutputManifestFile,
