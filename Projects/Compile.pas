@@ -7313,6 +7313,7 @@ begin
     CodeCompiler.AddExport('InitializeWizard', '0', False, '', 0);
     CodeCompiler.AddExport('GetCustomSetupExitCode', 'LongInt', False, '', 0);
     CodeCompiler.AddExport('PrepareToInstall', 'String !Boolean', False, '', 0);
+    CodeCompiler.AddExport('WebFileDownloadHandler', '0 @String @String @String', False, '', 0);
 
     CodeCompiler.AddExport('InitializeUninstall', 'Boolean', False, '', 0);
     CodeCompiler.AddExport('DeinitializeUninstall', '0', False, '', 0);
