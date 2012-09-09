@@ -347,13 +347,13 @@ begin
   UrlList := TStringList.Create;
   try
     { Split multiple URLs }
-    URL := WebFilename + ' :: ';
-    I := Pos(' :: ', URL);
+    URL := WebFilename + ' ';
+    I := Pos(' ', URL);
     while I <> 0 do begin
       if I > 1 then
         UrlList.Add(Trim(Copy(URL, 1, I - 1)));
-      URL := Copy(URL, I + 4, Length(URL));
-      I := Pos(' :: ', URL);
+      URL := Trim(Copy(URL, I + 4, Length(URL)));
+      I := Pos(' ', URL);
     end;
     Assert(UrlList.Count > 0);
 
