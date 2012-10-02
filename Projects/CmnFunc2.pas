@@ -159,8 +159,11 @@ var
 implementation
 
 uses
-  (*{$IFNDEF Delphi3orHigher} OLE2, {$ELSE} ActiveX, {$ENDIF} ShlObj,*) PathFunc;
-  // Active adds Variants to the project
+  {$IFNDEF Delphi3orHigher} OLE2, ShlObj, {$ENDIF} PathFunc;
+
+{$IFDEF Delphi3orHigher}
+
+{ Avoid including Variants (via ActiveX and ShlObj) in SetupLdr (SetupLdr uses CmnFunc2), saving 26 KB. }
 
 const
   shell32 = 'shell32.dll';
@@ -197,6 +200,7 @@ function SHGetSpecialFolderLocation(hwndOwner: HWND; nFolder: Integer;
 function SHGetPathFromIDList(pidl: PItemIDList; pszPath: PChar): BOOL; stdcall;
   external shell32 name {$IFDEF UNICODE}'SHGetPathFromIDListW'{$ELSE}'SHGetPathFromIDListA'{$ENDIF};
 
+{$ENDIF}
 
 function InternalGetFileAttr(const Name: String): Integer;
 begin
