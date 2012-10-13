@@ -715,7 +715,7 @@ const
     'program', 'record', 'repeat', 'set', 'shl', 'shr',
     'then', 'to', 'try', 'type', 'until', 'var', 'while',
     'with', 'xor');
-  EventFunctions: array[0..20] of TScintRawString = (
+  EventFunctions: array[0..21] of TScintRawString = (
     'InitializeSetup', 'DeinitializeSetup', 'CurStepChanged',
     'NextButtonClick', 'BackButtonClick', 'ShouldSkipPage',
     'CurPageChanged', 'CheckPassword', 'NeedRestart',
@@ -724,7 +724,7 @@ const
     'InitializeUninstall', 'DeinitializeUninstall',
     'CurUninstallStepChanged', 'UninstallNeedRestart',
     'CancelButtonClick', 'InitializeUninstallProgressForm',
-    'PrepareToInstall');
+    'PrepareToInstall', 'RegisterExtraCloseApplicationsResources');
 var
   S: TScintRawString;
   I: Integer;
