@@ -2320,6 +2320,30 @@ end;</pre></example>
         <description><p>Makes sure that Setup or Uninstall is visible and the foreground window.</p></description>
       </function>
     </subcategory>
+    <subcategory>
+      <function>
+        <name>ProcessEvents</name>
+        <prototype>function ProcessEvents: Boolean;</prototype>
+        <description><p>Processes all window messages that are in the message queue. Returns False if the user canceled the installation, True otherwise.</p></description>
+        <example><pre>var
+  I: Integer;
+begin
+  Result := True;
+  // An operation that takes some time to complete
+  for I := 0 to 1000 do
+  begin
+    if I mod 10 = 0 then
+    begin
+      // Allow the user to cancel the setup
+      Result := ProcessEvents;
+      if not Result then
+        Break;
+    end;
+    Sleep(10);
+  end;
+end;</pre></example>
+      </function>
+    </subcategory>
   </category>
   <category>
     <description><p>Deprecated</p></description>
