@@ -2320,6 +2320,71 @@ end;</pre></example>
         <description><p>Makes sure that Setup or Uninstall is visible and the foreground window.</p></description>
       </function>
     </subcategory>
+    <subcategory>
+      <function>
+        <name>ProcessEvents</name>
+        <prototype>function ProcessEvents: Boolean;</prototype>
+        <description><p>Processes all window messages that are in the message queue. Returns False if the user canceled the installation, True otherwise.</p></description>
+        <example><pre>var
+  I: Integer;
+begin
+  Result := True;
+  // An operation that takes some time to complete
+  for I := 0 to 1000 do
+  begin
+    if I mod 10 = 0 then
+    begin
+      // Allow the user to cancel the setup
+      Result := ProcessEvents;
+      if not Result then
+        Break;
+    end;
+    Sleep(10);
+  end;
+end;</pre></example>
+      </function>
+    </subcategory>
+    <subcategory>
+      <function>
+        <name>UpdateComponentList</name>
+        <prototype>procedure UpdateComponentList;</prototype>
+        <description><p>Updates the component list by calling the <tt>Check</tt> functions. The actual component selection isn't changed until the component page becomes visible.</p></description>
+        <example><pre>begin
+  // Changes a flag that is used in the Check function of a component
+  MyCompAvailable := FileExists(ExpandConstant('{app}\MyComp.dat'));
+
+  // Notify the Wizard to update the component list when it becomes visible
+  UpdateComponentList;
+end;
+
+function MyCompCheck: Boolean;
+begin
+  Result := MyCompAvailable;
+end;</pre></example>
+      </function>
+    </subcategory>
+    <subcategory>
+      <function>
+        <name>DownloadWebFile</name>
+        <prototype>procedure DownloadWebFile(const URL, Description, DestFilename, Referer, ProxyUserName, ProxyPassword: string; FtpTextMode, FtpPassive: Boolean);</prototype>
+        <description><p>Downloads the file from the URL. It shows the WebDownloadProgressGauge if the InstallPage is active. Otherwise it shows a small download form and disables the WizardForm until the download has finished or failed.</p>
+<p>Supported protocols are &quot;http://&quot; and &quot;https://&quot;. With the special &quot;download://&quot; protocol the file must be downloaded from the <link topic="scriptevents" anchor="WebFileDownloadHandler">WebFileDownloadHandler</link> event.</p>
+<p>Examples for URL<br />
+http://www.example.com/myfile.dat<br />
+http://username:password@www.example.com:88/download/myfile.dat<br />
+download://www.example.com/MySpecialProtectdFile.dat</p>
+</description>
+        <remarks><p>The function raises an exception if the download fails.</p></remarks>
+          <example><pre>
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageId = wpReady then // uses download dialog
+    DownloadWebFile('http://www.example.com/MyFile.dat', 'Downloading newest MyFile.dat', 'D:\Temp\MyFile.dat', '', '', '', False, False)
+  else if CurPageID = wpInstalling then // uses progress bar from the installing wizard page
+    DownloadWebFile('http://www.example.com/YourFile.dat', 'Downloading YourFile.dat', ExpandConstant('{app}\YourFile.dat'), '', '', '', False, False);
+end;</pre></example>
+      </function>
+    </subcategory>
   </category>
   <category>
     <description><p>Deprecated</p></description>
