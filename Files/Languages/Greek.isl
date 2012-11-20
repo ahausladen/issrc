@@ -5,8 +5,7 @@
 ; Setup adds the periods automatically (appending a period would result in
 ; two periods being displayed).
 ;
-; Originally translated by Anastasis Chatzioglou
-;                          http://anasto.go.to, baldycom@hotmail.com
+; Originally translated by Anastasis Chatzioglou, baldycom@hotmail.com
 ; Updated by XhmikosR [XhmikosR, my_nickname at yahoo dot com]
 ; 29th October 2011 [XhmikosR]:
 ;   various cleanup and minor updates
@@ -111,7 +110,7 @@ NewFolderName=Νέος φάκελος
 
 ; *** "Welcome" wizard page
 WelcomeLabel1=Καλωσορίσατε στην εγκατάσταση του [name]
-WelcomeLabel2=Θα γίνει εγκατάσταση του [name/ver] στον υπολογιστή σας.%n%nΠριν συνεχίσετε σας συνιστούμε να κλείσετε κάθε άλλη εφαρμογή πριν συνεχίσετε.
+WelcomeLabel2=Θα γίνει εγκατάσταση του [name/ver] στον υπολογιστή σας.%n%nΣας συνιστούμε να κλείσετε κάθε άλλη εφαρμογή πριν συνεχίσετε.
 
 ; *** "Password" wizard page
 WizardPassword=Εισαγωγή Κωδικού
@@ -330,12 +329,12 @@ ShutdownBlockReasonUninstallingApp=Απεγκατάσταση του %1.
 
 NameAndVersion=%1 έκδοση %2
 AdditionalIcons=Επιπλέον εικονίδια:
-CreateDesktopIcon=Δημιουργία ενός &εικονιδίου στην επιφάνεια εργασίας
-CreateQuickLaunchIcon=Δημιουργία ενός εικονιδίου στη &Γρήγορη Εκκίνηση
+CreateDesktopIcon=Δημιουργία &εικονιδίου στην επιφάνεια εργασίας
+CreateQuickLaunchIcon=Δημιουργία εικονιδίου στη &Γρήγορη Εκκίνηση
 ProgramOnTheWeb=Το %1 στο Internet
 UninstallProgram=Απεγκατάσταση του %1
 LaunchProgram=Εκκίνηση του %1
-AssocFileExtension=%Αντιστοίχιση του %1 με την %2 επέκταση αρχείου
+AssocFileExtension=&Αντιστοίχιση του %1 με την %2 επέκταση αρχείου
 AssocingFileExtension=Γίνεται αντιστοίχηση του %1 με την %2 επέκταση αρχείου...
 AutoStartProgramGroupDescription=Εκκίνηση:
 AutoStartProgram=Αυτόματη εκκίνηση του %1

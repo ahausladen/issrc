@@ -7,27 +7,27 @@ rem  For conditions of distribution and use, see LICENSE.TXT.
 rem
 rem  Batch file to prepare a release
 rem
-rem  Edit the desired version number below before running
-rem
 rem  Calls setup-sign.bat if it exists, else creates setup.exe without signing
 rem
 rem  This batch files does the following things:
 rem  -Compile ISPP.chm
 rem  -Compile ISetup.chm
 rem  -Compile ANSI Inno Setup
-rem  -Create ANSI Inno Setup setup.exe
+rem  -Create ANSI Inno Setup installer
 rem  -Compile Unicode Inno Setup
-rem  -Create Unicode Inno Setup setup.exe
+rem  -Create Unicode Inno Setup installer
 rem
-rem  Once done the 2 setup files can be found in Output and additionally 2 ISCC
+rem  Once done the 2 installers can be found in Output and additionally 2 ISCC
 rem  files are stored there for later use while preparing an ISPack release
 
 setlocal
 
 set VER=5.5.2
 
-echo %VER%?
-pause
+echo Building Inno Setup %VER%...
+echo.
+
+cd /d %~dp0
 
 cd projects\ispp\help
 if errorlevel 1 goto failed
