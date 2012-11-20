@@ -985,6 +985,7 @@ DefaultGroupName=My Program
 <li><link topic="setup_licensefile">LicenseFile</link></li>
 <li><link topic="setup_minversion">MinVersion</link></li>
 <li><link topic="setup_onlybelowversion">OnlyBelowVersion</link></li>
+<li><link topic="setup_optimizedchecks">OptimizedChecks</link></li>
 <li><link topic="setup_password">Password</link></li>
 <li><link topic="setup_privilegesrequired">PrivilegesRequired</link></li>
 <li><link topic="setup_restartapplications">RestartApplications</link></li>
@@ -3751,6 +3752,35 @@ Name: portablemode; Description: "Portable Mode"</pre></example>
 <p>This directive lets you specify a minimum <link topic="winvernotes">version of Windows</link> that your software <i>will not</i> run on. Specifying "0" means there is no upper version limit. <link topic="buildnumnotes">Build numbers and/or service pack levels</link> may be included.</p>
 <p>This directive is essentially the opposite of <link topic="setup_minversion">MinVersion</link>.</p>
 <p>For compatibility with previous versions of Inno Setup, separate Windows 95/98/Me and Windows NT version numbers may be specified, separated by a comma. Example: <tt>OnlyBelowVersion=0,6.0</tt>. The Windows 95/98/Me version number (the first number) isn't used, however, as Inno Setup no longer supports Windows 95/98/Me.</p>
+</body>
+</setuptopic>
+
+<setuptopic directive="OptimizedChecks">
+<setupvalid><link topic="yesnonotes"><tt>yes</tt> or <tt>no</tt></link></setupvalid>
+<setupdefault><tt>no</tt></setupdefault>
+<body>
+<p>When set to <tt>yes</tt>, Setup can speed up the installation by evaluating the <tt>Check</tt> function only for the first file from a <tt>Source</tt> entry.</p>
+<p>This is done by caching the last result of the <tt>Check</tt> function. If the parameters change the cache is reset.</p>
+<example><pre>[Files]
+Source: app\*.txt; DestDir: {app}; Check: MyCheck(1)
+Source: app\data\data.bin; DestDir: {app}\data; Check: MyCheck(2)
+Source: app\bin\app.exe; DestDir: {app}\bin; Check: MyCheck(1)
+Source: app\bin\app2.exe; DestDir: {app}\bin; Check: MyCheck(1)</pre></example>
+<p>With <tt>OptimizedChecks=no</tt></p>
+<indent>
+<p>MyCheck(1) // readme.txt<br/>
+MyCheck(1) // license.txt<br/>
+MyCheck(1) // deploy.txt<br/>
+MyCheck(2) // data.bin<br/>
+MyCheck(1) // app.exe<br/>
+MyCheck(1) // app2.exe</p>
+</indent>
+<p>With <tt>OptimizedChecks=yes</tt></p>
+<indent>
+<p>MyCheck(1) // readme.txt - license.txt and deploy.txt use the cached result value<br/>
+MyCheck(2) // data.bin - parameter has changed<br/>
+MyCheck(1) // app.exe - parameter has changed, app2.exe uses the cached result value</p>
+</indent>
 </body>
 </setuptopic>
 
