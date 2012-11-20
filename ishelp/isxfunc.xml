@@ -2320,6 +2320,25 @@ end;</pre></example>
         <description><p>Makes sure that Setup or Uninstall is visible and the foreground window.</p></description>
       </function>
     </subcategory>
+    <subcategory>
+      <function>
+        <name>UpdateComponentList</name>
+        <prototype>procedure UpdateComponentList;</prototype>
+        <description><p>Updates the component list by calling the <tt>Check</tt> functions. The actual component selection isn't changed until the component page becomes visible.</p></description>
+        <example><pre>begin
+  // Changes a flag that is used in the Check function of a component
+  MyCompAvailable := FileExists(ExpandConstant('{app}\MyComp.dat'));
+
+  // Notify the Wizard to update the component list when it becomes visible
+  UpdateComponentList;
+end;
+
+function MyCompCheck: Boolean;
+begin
+  Result := MyCompAvailable;
+end;</pre></example>
+      </function>
+    </subcategory>
   </category>
   <category>
     <description><p>Deprecated</p></description>
