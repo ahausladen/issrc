@@ -28,7 +28,6 @@ type
     scCode,
     scComponents,
     scCustomMessages,
-    scPackages,
     scDirs,
     scFiles,
     scIcons,
@@ -37,6 +36,7 @@ type
     scLangOptions,
     scLanguages,
     scMessages,
+    scPackages,
     scRegistry,
     scRun,
     scSetup,
@@ -279,12 +279,6 @@ const
     (Name: 'Tasks'),
     (Name: 'Type'));
 
-  PackagesSectionParameters: array[0..3] of TInnoSetupStylerParamInfo = (
-    (Name: 'Name'),
-    (Name: 'Description'),
-    (Name: 'Source'),
-    (Name: 'Flags'));
-
   DirsSectionParameters: array[0..11] of TInnoSetupStylerParamInfo = (
     (Name: 'AfterInstall'),
     (Name: 'Attribs'),
@@ -299,7 +293,7 @@ const
     (Name: 'Permissions'),
     (Name: 'Tasks'));
 
-  FilesSectionParameters: array[0..19] of TInnoSetupStylerParamInfo = (
+  FilesSectionParameters: array[0..20] of TInnoSetupStylerParamInfo = (
     (Name: 'AfterInstall'),
     (Name: 'Attribs'),
     (Name: 'BeforeInstall'),
@@ -315,6 +309,7 @@ const
     (Name: 'Languages'),
     (Name: 'MinVersion'),
     (Name: 'OnlyBelowVersion'),
+    (Name: 'Package'),
     (Name: 'Permissions'),
     (Name: 'Source'),
     (Name: 'StrongAssemblyName'),
@@ -362,6 +357,12 @@ const
     (Name: 'LicenseFile'),
     (Name: 'MessagesFile'),
     (Name: 'Name'));
+
+  PackagesSectionParameters: array[0..3] of TInnoSetupStylerParamInfo = (
+    (Name: 'Name'),
+    (Name: 'Description'),
+    (Name: 'Source'),
+    (Name: 'Flags'));
 
   RegistrySectionParameters: array[0..14] of TInnoSetupStylerParamInfo = (
     (Name: 'AfterInstall'),
@@ -496,7 +497,6 @@ const
     (Name: 'Code'; Value: scCode),
     (Name: 'Components'; Value: scComponents),
     (Name: 'CustomMessages'; Value: scCustomMessages),
-    (Name: 'Packages'; Value: scPackages),
     (Name: 'Dirs'; Value: scDirs),
     (Name: 'Files'; Value: scFiles),
     (Name: 'Icons'; Value: scIcons),
@@ -505,6 +505,7 @@ const
     (Name: 'LangOptions'; Value: scLangOptions),
     (Name: 'Languages'; Value: scLanguages),
     (Name: 'Messages'; Value: scMessages),
+    (Name: 'Packages'; Value: scPackages),
     (Name: 'Registry'; Value: scRegistry),
     (Name: 'Run'; Value: scRun),
     (Name: 'Setup'; Value: scSetup),
@@ -533,7 +534,6 @@ constructor TInnoSetupStyler.Create(AOwner: TComponent);
 begin
   inherited;
   BuildKeywordListFromParameters(scComponents, ComponentsSectionParameters);
-  BuildKeywordListFromParameters(scPackages, PackagesSectionParameters);
   BuildKeywordListFromParameters(scDirs, DirsSectionParameters);
   BuildKeywordListFromParameters(scFiles, FilesSectionParameters);
   BuildKeywordListFromParameters(scIcons, IconsSectionParameters);
@@ -541,6 +541,7 @@ begin
   BuildKeywordListFromParameters(scInstallDelete, DeleteSectionParameters);
   BuildKeywordListFromEnumType(scLangOptions, TypeInfo(TLangOptionsSectionDirective));
   BuildKeywordListFromParameters(scLanguages, LanguagesSectionParameters);
+  BuildKeywordListFromParameters(scPackages, PackagesSectionParameters);
   BuildKeywordListFromParameters(scRegistry, RegistrySectionParameters);
   BuildKeywordListFromParameters(scRun, RunSectionParameters);
   BuildKeywordListFromEnumType(scSetup, TypeInfo(TSetupSectionDirective));
@@ -1167,7 +1168,6 @@ begin
       scCode: HandleCodeSection(NewLineState.SpanState);
       scComponents: HandleParameterSection(ComponentsSectionParameters);
       scCustomMessages: HandleKeyValueSection(Section);
-      scPackages: HandleParameterSection(PackagesSectionParameters);
       scDirs: HandleParameterSection(DirsSectionParameters);
       scFiles: HandleParameterSection(FilesSectionParameters);
       scIcons: HandleParameterSection(IconsSectionParameters);
@@ -1176,6 +1176,7 @@ begin
       scLangOptions: HandleKeyValueSection(Section);
       scLanguages: HandleParameterSection(LanguagesSectionParameters);
       scMessages: HandleKeyValueSection(Section);
+      scPackages: HandleParameterSection(PackagesSectionParameters);
       scRegistry: HandleParameterSection(RegistrySectionParameters);
       scRun: HandleParameterSection(RunSectionParameters);
       scSetup: HandleKeyValueSection(Section);
