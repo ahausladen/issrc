@@ -16,7 +16,7 @@ interface
 uses
   Windows, SysUtils, Messages, Classes, Graphics, Controls, Forms, Dialogs,
   SetupForm, StdCtrls, Struct, DebugStruct, Int64Em, CmnFunc, CmnFunc2,
-  SetupTypes, ScriptRunner, BidiUtils, RestartManager;
+  SetupTypes, ScriptRunner, BidiUtils, RestartManager, NewProgressBar;
 
 type
   TMainForm = class(TSetupForm)
@@ -46,6 +46,30 @@ type
     class procedure ShowException(Sender: TObject; E: Exception);
     class procedure ShowExceptionMsg(const S: String);
     procedure ShowAboutBox;
+  end;
+
+  TWebDownloadForm = class(TForm)
+  private
+    FStatusLabel: TLabel;
+    FProgressGauge: TNewProgressBar;
+    FAllSize: Double;
+    FBytesRead: Double;
+    FCurrentTotalSize: Cardinal;
+    FFilenameLabel: TLabel;
+    FCancelButton: TButton;
+  protected
+    procedure CancelButtonClick(Sender: TObject);
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure UpdateProgress(var Status: string; BytesRead, TotalSize: Cardinal);
+    procedure NextFile(FileSize: Cardinal);
+    procedure Reset;
+
+    property StatusLabel: TLabel read FStatusLabel;
+    property FilenameLabel: TLabel read FFilenameLabel;
+    property ProgressGauge: TNewProgressBar read FProgressGauge;
+    property CancelButton: TButton read FCancelButton;
+    property AllSize: Double read FAllSize write FAllSize;
   end;
 
   TEntryType = (seLanguage, seCustomMessage, sePermission, seType, seComponent,
@@ -179,6 +203,7 @@ var
 {$ENDIF}
 
   CodeRunner: TScriptRunner;
+  WebDownloadForm: TWebDownloadForm;
 
 function CodeRunnerOnDebug(const Position: LongInt;
   var ContinueStepOver: Boolean): Boolean;
@@ -3401,6 +3426,86 @@ begin
   PostMessage(0, WM_QUIT, 0, 0);
 end;
 
+{ TWebDownloadForm }
+
+procedure TWebDownloadForm.CancelButtonClick(Sender: TObject);
+begin
+  NeedToAbortInstall := True;
+end;
+
+constructor TWebDownloadForm.Create(AOwner: TComponent);
+begin
+  CreateNew(AOwner);
+
+  Caption := Application.Title;
+  Width := 350;
+  //Height := 100;
+  BorderStyle := bsDialog;
+  BorderIcons := [];
+  Position := poScreenCenter;
+
+  FStatusLabel := TLabel.Create(Self);
+  FStatusLabel.Name := 'StatusLabel';
+  FStatusLabel.Parent := Self;
+  FStatusLabel.Left := 8;
+  FStatusLabel.Top := 8;
+  FStatusLabel.Caption := '';
+
+  FFilenameLabel := TLabel.Create(Self);
+  FFilenameLabel.Name := 'FilenameLabel';
+  FFilenameLabel.Parent := Self;
+  FFilenameLabel.Left := 8;
+  FFilenameLabel.Top := FStatusLabel.Top + FStatusLabel.Height + 6;
+  FFilenameLabel.Caption := '';
+
+  FProgressGauge := TNewProgressBar.Create(Self);
+  FProgressGauge.Name := 'ProgressGauge';
+  FProgressGauge.Parent := Self;
+  {FProgressGauge.Position := 0;
+  FProgressGauge.Min := 0;
+  FProgressGauge.Max := 100;}
+  FProgressGauge.Left := 8;
+  FProgressGauge.Top := FFilenameLabel.Top + FFilenameLabel.Height + 6;
+  FProgressGauge.Width := ClientWidth - FProgressGauge.Left * 2;
+
+  FCancelButton := TButton.Create(Self);
+  FCancelButton.Name := 'CancelButton';
+  FCancelButton.Parent := Self;
+  FCancelButton.Left := ClientWidth - 8 - FCancelButton.Width;
+  FCancelButton.Top := FProgressGauge.Top + FProgressGauge.Height + 4;
+  FCancelButton.Caption := SetupMessages[msgButtonCancel];
+  FCancelButton.OnClick := CancelButtonClick;
+
+  ClientHeight := FCancelButton.Top + FCancelButton.Height + 8;
+end;
+
+procedure TWebDownloadForm.NextFile(FileSize: Cardinal);
+begin
+  FBytesRead := FBytesRead + FCurrentTotalSize;
+  FCurrentTotalSize := FileSize;
+end;
+
+procedure TWebDownloadForm.Reset;
+begin
+  FBytesRead := 0;
+  FAllSize := 0.0;
+end;
+
+procedure TWebDownloadForm.UpdateProgress(var Status: string; BytesRead, TotalSize: Cardinal);
+var
+  NewPercentage: Integer;
+begin
+  if (TotalSize <> 0) and (TotalSize <> FCurrentTotalSize) then begin
+    FAllSize := FAllSize - FCurrentTotalSize + TotalSize;
+    FCurrentTotalSize := TotalSize;
+  end;
+
+  NewPercentage := 0;
+  if FAllSize > 0 then
+    NewPercentage := Round((FBytesRead + BytesRead) * 100 / FAllSize);
+  if NewPercentage <> ProgressGauge.Position then
+    ProgressGauge.Position := NewPercentage;
+end;
 
 { TMainForm }
 
